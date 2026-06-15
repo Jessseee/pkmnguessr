@@ -1,0 +1,22 @@
+{
+	"name": "pkmnguessr",
+	"compatibility_date": "2026-06-09",
+	"compatibility_flags": ["nodejs_compat"],
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	"workers_dev": true,
+	"preview_urls": true,
+	"observability": {
+		"enabled": true
+	},
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare"
+	},
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "5da115278361454891c1ec7c08badcfc"
+		}
+	]
+}
