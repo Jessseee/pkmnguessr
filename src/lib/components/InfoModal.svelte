@@ -7,8 +7,10 @@
 	{#snippet button(buttonProps)}
 		<button
 			{...buttonProps}
-			class="rounded-xl border-4 border-slate-400 bg-white px-1 text-slate-400 hover:border-slate-600 hover:text-slate-600 {buttonProps?.class ??
-				''}"
+			class={[
+				'rounded-xl border-4 border-slate-400 bg-white px-1 text-slate-400 transition-colors hover:border-slate-600 hover:bg-slate-100 hover:text-slate-700',
+				buttonProps?.class
+			]}
 		>
 			<BookOpenText />
 		</button>

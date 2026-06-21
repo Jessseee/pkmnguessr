@@ -13,7 +13,7 @@ export type Hints = {
 	type2: Hint;
 };
 export type Guess = {
-	answer: string | null;
+	answer?: string;
 	correct: boolean;
 	pokemonId: string;
 	hints: Hints;
