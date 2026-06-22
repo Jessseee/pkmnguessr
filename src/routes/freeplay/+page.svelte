@@ -6,6 +6,7 @@
 	import { createShareText } from '$lib/utils/share';
 	import { page } from '$app/state';
 	import { RotateCcw } from '@lucide/svelte';
+	import SocialPreview from '$lib/components/SocialPreview.svelte';
 
 	const { data } = $props();
 
@@ -34,6 +35,11 @@
 		gameKey += 1;
 	}
 </script>
+
+<SocialPreview
+	title="PkmnGuessr - Freeplay"
+	description="Who's that Pokémon? Keep testing your Pokémon knowledge in PkmnGuessr freeplay for endless fun!"
+/>
 
 <div class="relative mx-auto p-4 sm:max-w-xl">
 	{#if gameFinished}

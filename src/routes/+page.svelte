@@ -8,6 +8,7 @@
 	import { todayKey } from '$lib/utils/date';
 	import Countdown from '$lib/components/Countdown.svelte';
 	import { RefreshCw } from '@lucide/svelte';
+	import SocialPreview from '$lib/components/SocialPreview.svelte';
 
 	const { data } = $props();
 
@@ -29,6 +30,11 @@
 		})
 	);
 </script>
+
+<SocialPreview
+	title="PkmnGuessr - Daily"
+	description="Who's that Pokémon? Identify the daily mystery Pokémon before you run out of guesses."
+/>
 
 <div class="relative mx-auto p-4 sm:max-w-xl">
 	{#if gameFinished}

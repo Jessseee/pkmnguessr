@@ -34,16 +34,16 @@
 </script>
 
 <button type="button" onclick={share} class={buttonClass}>
-	<span class="max-[350px]:hidden mr-1">Share</span>
+	<span class="mr-1 max-[350px]:hidden">Share</span>
 	<Share2 class="inline size-4 shrink-0 sm:size-5" />
 </button>
 
 <button type="button" onclick={copy} class={buttonClass}>
-	<span class="max-[350px]:hidden mr-1">{copied ? 'Copied' : 'Copy'}</span>
+	<span class="mr-1 max-[350px]:hidden">{copied ? 'Copied' : 'Copy'}</span>
 
 	{#if copied}
-		<ClipboardCheck class="inline shrink-0 size-5" />
+		<ClipboardCheck class="inline size-5 shrink-0" />
 	{:else}
-		<Clipboard class="inline shrink-0 size-5" />
+		<Clipboard class="inline size-5 shrink-0" />
 	{/if}
 </button>
