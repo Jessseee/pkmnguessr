@@ -8,6 +8,12 @@ export type Generation = {
 	name: string;
 };
 
+export type Shape = {
+	id: string;
+	name: string;
+	sprite: string;
+};
+
 export type Pokemon = {
 	id: string;
 	name: string;
@@ -20,4 +26,5 @@ export type Pokemon = {
 	height: number;
 	type1: Type;
 	type2?: Type;
+	shape: Shape;
 };

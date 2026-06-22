@@ -15,12 +15,11 @@
 	import { PUBLIC_MAX_GUESSES } from '$env/static/public';
 
 	const UNOWN: Pokemon = {
-		id: '201',
+		id: '0',
 		name: 'Unown?',
 		searchName: 'unown',
 		sprite: 'sprites/pokemon/201.png',
-		flavorText:
-			'Their shapes look like hieroglyphs on ancient tablets. It is said that the two are somehow related.',
+		flavorText: 'This Pokémon does not exists, something seems to have gone wrong!',
 		gen: {
 			id: 2,
 			name: 'Gold & Silver'
@@ -30,6 +29,11 @@
 		type1: {
 			id: '14',
 			name: 'psychic'
+		},
+		shape: {
+			id: '1',
+			name: 'ball',
+			sprite: 'sprites/shapes/Body01.png'
 		}
 	};
 
@@ -231,7 +235,7 @@
 {#if guesses.length > 0}
 	<div class="mt-4 w-full space-y-2">
 		<div
-			class="grid w-full grid-cols-6 gap-1 border-b-2 pb-1 text-center max-[450px]:text-xs sm:text-lg"
+			class="grid w-full grid-cols-7 gap-1 border-b-2 pb-1 text-center max-[450px]:text-xs sm:text-lg"
 		>
 			<div>Pokemon</div>
 			<div>Gen.</div>
@@ -239,6 +243,7 @@
 			<div>Type2</div>
 			<div>Height</div>
 			<div>Weight</div>
+			<div>Shape</div>
 		</div>
 		{#each guesses as guess (guess.pokemonId)}
 			<GuessEntry {guess} pokemon={getPokemonById(guess.pokemonId)} />
@@ -258,9 +263,8 @@
 				<div class="border-2 border-red-300 px-5 py-2">
 					<h1 class="text-2xl font-bold">Who's that Pokémon?</h1>
 					<p>
-						Start typing a Pokémon name to begin. You have <span class="font-bold underline"
-							>{Number(PUBLIC_MAX_GUESSES ?? 8)}</span
-						> guesses.
+						Start typing a Pokémon name to begin. You have
+						<span class="font-bold underline">{Number(PUBLIC_MAX_GUESSES ?? 8)}</span> guesses.
 					</p>
 				</div>
 			</div>

@@ -1,11 +1,11 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import Pokedex from 'pokedex-promise-v2';
-import type { Pokemon, Type } from '../src/lib/types/Pokemon';
+import type { Pokemon, Shape, Type } from '../src/lib/types/Pokemon';
 import { createProgressBar, limitedConcurrency } from './concurrency';
 
 const pokemonApi = new Pokedex({ timeout: 60_000 });
 
-const WORKERS = 2;
+const WORKERS = 3;
 const BATCH_SIZE = 50;
 const RAW_SPRITES_PREFIX = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/';
 
@@ -336,6 +336,16 @@ function getFlavorText(species: Pokedex.PokemonSpecies): string | undefined {
 		.trim();
 }
 
+function getPokemonShape(species: Pokedex.PokemonSpecies): Shape {
+	const id = getIdFromUrl(species.shape.url);
+
+	return {
+		id,
+		name: species.shape.name,
+		sprite: `sprites/shapes/Body${id.padStart(2, '0')}.png`
+	};
+}
+
 function toPokemon(
 	species: Pokedex.PokemonSpecies,
 	variety: Pokedex.Variety,
@@ -364,7 +374,8 @@ function toPokemon(
 		height: pokemon.height / 10,
 		weight: pokemon.weight / 10,
 		type1: types[0],
-		type2: types[1]
+		type2: types[1],
+		shape: getPokemonShape(species)
 	};
 }
 

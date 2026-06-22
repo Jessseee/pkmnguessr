@@ -11,6 +11,7 @@ export type Hints = {
 	weight: Hint;
 	type1: Hint;
 	type2: Hint;
+	shape: Hint;
 };
 export type Guess = {
 	answer?: string;

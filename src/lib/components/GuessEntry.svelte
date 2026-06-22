@@ -10,7 +10,7 @@
 	const { correct, hints } = $derived(guess);
 </script>
 
-<div class="grid w-full grid-cols-6 gap-1 max-[450px]:text-xs sm:text-lg">
+<div class="grid w-full grid-cols-7 gap-1 max-[450px]:text-xs sm:text-lg">
 	<div
 		class={[
 			'flex aspect-square w-full items-center justify-center rounded-xl border-3 border-gray-200 bg-linear-to-tr from-white sm:border-4',
@@ -104,5 +104,19 @@
 		{:else if hints.weight === Hint.Lower}
 			<ArrowDown />
 		{/if}
+	</div>
+	<div
+		class={[
+			'flex aspect-square w-full items-center justify-center rounded-xl border-3 border-gray-200 bg-linear-to-tr from-white sm:border-4',
+			hints.shape === Hint.Correct && 'border-green-600! to-green-100',
+			hints.shape === Hint.Incorrect && 'border-red-600 to-red-100'
+		]}
+	>
+		<img
+			src="{PUBLIC_ASSETS_DOMAIN}/{pokemon.shape?.sprite}"
+			alt={pokemon.shape?.sprite}
+			class="h-2/3 w-2/3 object-contain"
+			loading="lazy"
+		/>
 	</div>
 </div>
