@@ -1,24 +1,28 @@
 export async function limitedConcurrency<T, R>(
-	items: T[],
+	items: readonly T[],
 	workers: number,
 	fn: (item: T, index: number) => Promise<R>,
 	onProgress?: (completed: number, total: number) => void
 ): Promise<R[]> {
-	const results: R[] = [];
+	const results = new Array<R>(items.length);
+	const workerCount = Math.min(Math.max(workers, 1), items.length);
+
 	let index = 0;
 	let completed = 0;
 
 	async function worker(): Promise<void> {
 		while (index < items.length) {
-			const currentIndex = index++;
+			const currentIndex = index;
+			index += 1;
+
 			results[currentIndex] = await fn(items[currentIndex], currentIndex);
 
-			completed++;
+			completed += 1;
 			onProgress?.(completed, items.length);
 		}
 	}
 
-	await Promise.all(Array.from({ length: workers }, worker));
+	await Promise.all(Array.from({ length: workerCount }, worker));
 
 	return results;
 }

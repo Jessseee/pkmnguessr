@@ -1,17 +1,12 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import {
-	GameClient,
-	PokemonClient,
-	type Pokemon as PokenodePokemon,
-	type PokemonSpeciesVariety
-} from 'pokenode-ts';
+import Pokedex from 'pokedex-promise-v2';
 import type { Pokemon, Type } from '../src/lib/types/Pokemon';
 import { createProgressBar, limitedConcurrency } from './concurrency';
 
-const pokemonApi = new PokemonClient();
-const gameApi = new GameClient();
+const pokemonApi = new Pokedex({ timeout: 60_000 });
 
-const WORKERS = 5;
+const WORKERS = 2;
+const BATCH_SIZE = 50;
 const RAW_SPRITES_PREFIX = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/';
 
 const GAME_NAME_OVERRIDES: Record<string, string> = {
@@ -47,13 +42,51 @@ const FORM_RULES = {
 };
 
 type Region = keyof typeof REGIONAL_PREFIXES;
-type Species = Awaited<ReturnType<typeof pokemonApi.getPokemonSpeciesByName>>;
 
 function toTitleCase(value: string): string {
 	return value
 		.split('-')
 		.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
 		.join(' ');
+}
+
+function toArray<T>(value: T | T[]): T[] {
+	return Array.isArray(value) ? value : [value];
+}
+
+function toBatches<T>(items: readonly T[], batchSize: number): T[][] {
+	const batches: T[][] = [];
+
+	for (let index = 0; index < items.length; index += batchSize) {
+		batches.push(items.slice(index, index + batchSize));
+	}
+
+	return batches;
+}
+
+async function fetchBatched<T, R>(
+	label: string,
+	items: readonly T[],
+	fn: (batch: T[]) => Promise<R[]>
+): Promise<R[]> {
+	const progress = createProgressBar(label, items.length);
+	const batches = toBatches(items, BATCH_SIZE);
+	let completed = 0;
+
+	const results = await limitedConcurrency(
+		batches,
+		Math.min(WORKERS, batches.length),
+		async (batch) => {
+			const batchResults = await fn(batch);
+
+			completed += batch.length;
+			progress(completed);
+
+			return batchResults;
+		}
+	);
+
+	return results.flat();
 }
 
 function getIdFromUrl(url: string): string {
@@ -70,7 +103,7 @@ function toLocalSpriteUrl(spriteUrl?: string | null): string | undefined {
 		: spriteUrl;
 }
 
-function getSprite(pokemon?: PokenodePokemon): string | undefined {
+function getSprite(pokemon?: Pokedex.Pokemon): string | undefined {
 	return toLocalSpriteUrl(pokemon?.sprites.front_default);
 }
 
@@ -95,7 +128,7 @@ function isCosmeticForm(name: string): boolean {
 	);
 }
 
-function shouldIncludeVariety(variety: PokemonSpeciesVariety): boolean {
+function shouldIncludeVariety(variety: Pokedex.Variety): boolean {
 	return variety.is_default || !isCosmeticForm(variety.pokemon.name);
 }
 
@@ -140,30 +173,31 @@ function formatGamePair(names: string[]): string {
 	return names.map(formatGameName).join(' & ');
 }
 
-async function getAllSpecies() {
-	const firstPage = await pokemonApi.listPokemonSpecies(0, 1);
-	const allSpecies = await pokemonApi.listPokemonSpecies(0, firstPage.count);
+async function getAllSpecies(): Promise<Pokedex.NamedAPIResource[]> {
+	const firstPage = (await pokemonApi.getPokemonSpeciesList({
+		offset: 0,
+		limit: 1
+	})) as Pokedex.NamedAPIResourceList;
+
+	const allSpecies = (await pokemonApi.getPokemonSpeciesList({
+		offset: 0,
+		limit: firstPage.count
+	})) as Pokedex.NamedAPIResourceList;
 
 	return allSpecies.results;
 }
 
-async function getGeneration(pokemon: PokenodePokemon): Promise<{ id: number; name: string }> {
+function getPrimaryFormId(pokemon: Pokedex.Pokemon): string {
 	const formUrl = pokemon.forms[0]?.url;
 
 	if (!formUrl) {
 		throw new Error(`No forms found for Pokémon: ${pokemon.name}`);
 	}
 
-	const form = await pokemonApi.getPokemonFormById(Number(getIdFromUrl(formUrl)));
-	const versionGroup = await gameApi.getVersionGroupByName(form.version_group.name);
-
-	return {
-		id: Number(getIdFromUrl(versionGroup.generation.url)),
-		name: formatGamePair(versionGroup.versions.map((version) => version.name))
-	};
+	return getIdFromUrl(formUrl);
 }
 
-function toPokemonType(entry: PokenodePokemon['types'][number]): Type {
+function toPokemonType(entry: Pokedex.Pokemon['types'][number]): Type {
 	const id = getIdFromUrl(entry.type.url);
 
 	return {
@@ -172,7 +206,7 @@ function toPokemonType(entry: PokenodePokemon['types'][number]): Type {
 	};
 }
 
-function uniqueVarieties(varieties: PokemonSpeciesVariety[]): PokemonSpeciesVariety[] {
+function uniqueVarieties(varieties: Pokedex.Variety[]): Pokedex.Variety[] {
 	const seen = new Set<string>();
 
 	return varieties.filter((variety) => {
@@ -185,27 +219,80 @@ function uniqueVarieties(varieties: PokemonSpeciesVariety[]): PokemonSpeciesVari
 	});
 }
 
-async function getPokemonById(varieties: PokemonSpeciesVariety[]) {
-	const unique = uniqueVarieties(varieties);
-
-	const entries = await limitedConcurrency(
-		unique,
-		WORKERS,
-		async (variety) => {
-			const id = getIdFromUrl(variety.pokemon.url);
-			const pokemon = await pokemonApi.getPokemonById(Number(id));
-
-			return [id, pokemon] as const;
-		},
-		createProgressBar('Fetching Pokémon', unique.length)
+async function getPokemonById(varieties: Pokedex.Variety[]): Promise<Map<string, Pokedex.Pokemon>> {
+	const ids = uniqueVarieties(varieties).map((variety) =>
+		Number(getIdFromUrl(variety.pokemon.url))
 	);
 
-	return new Map(entries);
+	const pokemon = await fetchBatched('Fetching Pokémon', ids, async (batch) => {
+		const result = (await pokemonApi.getPokemonByName(batch)) as
+			| Pokedex.Pokemon
+			| Pokedex.Pokemon[];
+
+		return toArray(result);
+	});
+
+	return new Map(pokemon.map((entry) => [String(entry.id), entry]));
+}
+
+async function getGenerationByPokemonId(
+	pokemonById: Map<string, Pokedex.Pokemon>
+): Promise<Map<string, { id: number; name: string }>> {
+	const formIds = [
+		...new Set([...pokemonById.values()].map((pokemon) => Number(getPrimaryFormId(pokemon))))
+	];
+
+	const forms = await fetchBatched('Fetching forms', formIds, async (batch) => {
+		const result = (await pokemonApi.getPokemonFormByName(batch)) as
+			| Pokedex.PokemonForm
+			| Pokedex.PokemonForm[];
+
+		return toArray(result);
+	});
+
+	const formById = new Map(forms.map((form) => [String(form.id), form]));
+	const versionGroupNames = [...new Set(forms.map((form) => form.version_group.name))];
+
+	const versionGroups = await fetchBatched(
+		'Fetching version groups',
+		versionGroupNames,
+		async (batch) => {
+			const result = (await pokemonApi.getVersionGroupByName(batch)) as
+				| Pokedex.VersionGroup
+				| Pokedex.VersionGroup[];
+
+			return toArray(result);
+		}
+	);
+
+	const versionGroupByName = new Map(versionGroups.map((entry) => [entry.name, entry]));
+	const generationByPokemonId = new Map<string, { id: number; name: string }>();
+
+	for (const [pokemonId, pokemon] of pokemonById) {
+		const form = formById.get(getPrimaryFormId(pokemon));
+
+		if (!form) {
+			throw new Error(`No form found for Pokémon: ${pokemon.name}`);
+		}
+
+		const versionGroup = versionGroupByName.get(form.version_group.name);
+
+		if (!versionGroup) {
+			throw new Error(`No version group found for form: ${form.name}`);
+		}
+
+		generationByPokemonId.set(pokemonId, {
+			id: Number(getIdFromUrl(versionGroup.generation.url)),
+			name: formatGamePair(versionGroup.versions.map((version) => version.name))
+		});
+	}
+
+	return generationByPokemonId;
 }
 
 function getAltSpritesByDefaultId(
-	species: Species[],
-	pokemonById: Map<string, PokenodePokemon>
+	species: Pokedex.PokemonSpecies[],
+	pokemonById: Map<string, Pokedex.Pokemon>
 ): Map<string, string[]> {
 	const altSpritesByDefaultId = new Map<string, string[]>();
 
@@ -235,9 +322,10 @@ function toReadableAllCapsWord(value: string): string {
 	return lower.charAt(0).toLocaleUpperCase('en-US') + lower.slice(1);
 }
 
-function getFlavorText(species: Species): string | undefined {
+function getFlavorText(species: Pokedex.PokemonSpecies): string | undefined {
 	const entry = species.flavor_text_entries.find((entry) => entry.language.name === 'en');
 	if (!entry) return undefined;
+
 	return entry.flavor_text
 		.replace(/\f/g, ' ')
 		.replace(/\n/g, ' ')
@@ -248,20 +336,22 @@ function getFlavorText(species: Species): string | undefined {
 		.trim();
 }
 
-async function toPokemon(
-	species: Species,
-	variety: PokemonSpeciesVariety,
-	pokemonById: Map<string, PokenodePokemon>,
-	altSpritesByDefaultId: Map<string, string[]>
-): Promise<Pokemon | undefined> {
+function toPokemon(
+	species: Pokedex.PokemonSpecies,
+	variety: Pokedex.Variety,
+	pokemonById: Map<string, Pokedex.Pokemon>,
+	altSpritesByDefaultId: Map<string, string[]>,
+	generationByPokemonId: Map<string, { id: number; name: string }>
+): Pokemon | undefined {
 	const id = getIdFromUrl(variety.pokemon.url);
 	const pokemon = pokemonById.get(id);
 	const sprite = getSprite(pokemon);
+	const gen = generationByPokemonId.get(id);
 
-	if (!pokemon || !sprite) return undefined;
+	if (!pokemon || !sprite || !gen) return undefined;
 
 	const name = toDisplayPokemonName(variety.pokemon.name);
-	const types = pokemon.types.toSorted((a, b) => a.slot - b.slot).map(toPokemonType);
+	const types = [...pokemon.types].sort((a, b) => a.slot - b.slot).map(toPokemonType);
 
 	return {
 		id,
@@ -270,7 +360,7 @@ async function toPokemon(
 		sprite,
 		altSprites: altSpritesByDefaultId.get(id),
 		flavorText: getFlavorText(species),
-		gen: await getGeneration(pokemon),
+		gen,
 		height: pokemon.height / 10,
 		weight: pokemon.weight / 10,
 		type1: types[0],
@@ -281,12 +371,13 @@ async function toPokemon(
 async function main(): Promise<void> {
 	const speciesList = await getAllSpecies();
 
-	const species = await limitedConcurrency(
-		speciesList,
-		WORKERS,
-		({ name }) => pokemonApi.getPokemonSpeciesByName(name),
-		createProgressBar('Fetching species', speciesList.length)
-	);
+	const species = await fetchBatched('Fetching species', speciesList, async (batch) => {
+		const result = (await pokemonApi.getPokemonSpeciesByName(batch.map(({ name }) => name))) as
+			| Pokedex.PokemonSpecies
+			| Pokedex.PokemonSpecies[];
+
+		return toArray(result);
+	});
 
 	const allVarieties = species.flatMap((entry) => entry.varieties);
 
@@ -295,16 +386,18 @@ async function main(): Promise<void> {
 	);
 
 	const pokemonById = await getPokemonById(allVarieties);
+	const generationByPokemonId = await getGenerationByPokemonId(pokemonById);
 	const altSpritesByDefaultId = getAltSpritesByDefaultId(species, pokemonById);
 
-	const pokemonResults = await limitedConcurrency(
-		includedVarieties,
-		WORKERS,
-		({ species, variety }) => toPokemon(species, variety, pokemonById, altSpritesByDefaultId),
-		createProgressBar('Building Pokémon', includedVarieties.length)
-	);
+	const buildProgress = createProgressBar('Building Pokémon', includedVarieties.length);
 
-	const pokemon = pokemonResults.filter((entry): entry is Pokemon => Boolean(entry));
+	const pokemon = includedVarieties
+		.map(({ species, variety }, index) => {
+			buildProgress(index + 1);
+
+			return toPokemon(species, variety, pokemonById, altSpritesByDefaultId, generationByPokemonId);
+		})
+		.filter((entry): entry is Pokemon => Boolean(entry));
 
 	await mkdir('.generated', { recursive: true });
 	await writeFile('.generated/pokemon.json', JSON.stringify(pokemon, null, 2));
