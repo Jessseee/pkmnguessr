@@ -14,11 +14,9 @@
 
 	const storageKey = 'daily:guesses';
 
-	let gameState = $state(GameState.Playing);
+	let gameState = $state(GameState.Loading);
 	let guesses = $state<Guess[]>([]);
 	let gameKey = $state(0);
-
-	const gameFinished = $derived(gameState !== GameState.Playing && guesses.length > 0);
 
 	const shareText = $derived(
 		createShareText({
@@ -37,7 +35,7 @@
 />
 
 <div class="relative mx-auto p-4 sm:max-w-xl">
-	{#if gameFinished}
+	{#if gameState !== GameState.Playing && guesses.length > 0}
 		<div class="mb-4 grid w-full grid-cols-3 gap-2">
 			<ShareButton
 				text={shareText}

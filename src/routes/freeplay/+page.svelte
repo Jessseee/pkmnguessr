@@ -7,16 +7,15 @@
 	import { page } from '$app/state';
 	import { RotateCcw } from '@lucide/svelte';
 	import SocialPreview from '$lib/components/SocialPreview.svelte';
+	import { blur } from 'svelte/transition';
 
 	const { data } = $props();
 
 	const storageKey = 'freeplay:guesses';
 
-	let gameState = $state(GameState.Playing);
+	let gameState = $state(GameState.Loading);
 	let guesses = $state<Guess[]>([]);
 	let gameKey = $state(0);
-
-	const gameFinished = $derived(gameState !== GameState.Playing && guesses.length > 0);
 
 	const shareText = $derived(
 		createShareText({
@@ -42,8 +41,8 @@
 />
 
 <div class="relative mx-auto p-4 sm:max-w-xl">
-	{#if gameFinished}
-		<div class="mb-4 grid w-full grid-cols-[1fr_1fr_2fr] gap-2">
+	{#if gameState !== GameState.Playing && guesses.length > 0}
+		<div in:blur={{ delay: 300 }} class="mb-4 grid w-full grid-cols-[1fr_1fr_2fr] gap-2">
 			<ShareButton
 				text={shareText}
 				title="PkmnGuessr"
@@ -68,6 +67,8 @@
 	{/if}
 
 	{#key gameKey}
-		<Guessr pokemon={data.pokemon} {storageKey} bind:gameState bind:guesses />
+		<div out:blur>
+			<Guessr pokemon={data.pokemon} {storageKey} bind:gameState bind:guesses />
+		</div>
 	{/key}
 </div>

@@ -1,5 +1,6 @@
 export enum GameState {
-	Playing = 0,
+	Loading = 0,
+	Playing,
 	Won,
 	Lost
 }

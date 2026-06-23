@@ -13,6 +13,11 @@
 	import { todayKey } from '$lib/utils/date';
 	import { GameState } from '$lib/types/GameState';
 	import { PUBLIC_MAX_GUESSES } from '$env/static/public';
+	import { flip } from 'svelte/animate';
+	import { quintOut } from 'svelte/easing';
+	import { blur, slide } from 'svelte/transition';
+	import { X } from '@lucide/svelte';
+	import { getRandomPokeball } from '$lib/utils/pokeball';
 
 	const UNOWN: Pokemon = {
 		id: '0',
@@ -59,6 +64,7 @@
 	}: Props = $props();
 
 	let guessesLoaded = $state(false);
+	const pokeball = getRandomPokeball();
 
 	let error = $state('');
 
@@ -143,17 +149,26 @@
 	});
 
 	$effect(() => {
-		gameState =
-			guesses.length > 7
+		gameState = guessesLoaded
+			? guesses.length > 7
 				? GameState.Lost
 				: guesses.at(0)?.correct
 					? GameState.Won
-					: GameState.Playing;
+					: GameState.Playing
+			: GameState.Loading;
 	});
 </script>
 
-{#if gameState !== GameState.Playing}
+{#if gameState === GameState.Loading}
 	<div
+		class="fixed inset-0 z-50 flex items-center justify-center"
+		out:blur={{ delay: 300, duration: 300 }}
+	>
+		<img src="/poke-ball/{pokeball}.png" alt="Loading" id="loading" class="block size-16" />
+	</div>
+{:else if gameState !== GameState.Playing}
+	<div
+		in:blur={{ delay: 200 }}
 		class={[
 			'flex w-full flex-col items-center rounded-2xl border-4 p-2 text-center',
 			gameState === GameState.Won && 'border-green-600 bg-green-100',
@@ -181,7 +196,7 @@
 		{/if}
 	</div>
 {:else}
-	<form action="?/guess" method="POST" use:enhance={submit}>
+	<form action="?/guess" method="POST" use:enhance={submit} in:blur={{ delay: 200 }}>
 		<div class="flex w-full flex-row items-stretch">
 			<InfoModal />
 			<SearchField
@@ -218,6 +233,7 @@
 {/if}
 {#if searchFocused && searchResults.length > 0}
 	<ul
+		in:slide={{ duration: 200 }}
 		class="absolute left-0 z-10 flex max-h-[calc(100svh-8rem)] touch-pan-y flex-col items-center overflow-auto drop-shadow-lg drop-shadow-slate-300 sm:left-6 sm:items-start"
 	>
 		{#each searchResults as pokemon (pokemon.id)}
@@ -233,11 +249,11 @@
 	</ul>
 {/if}
 {#if guesses.length > 0}
-	<div class="mt-4 w-full space-y-2">
+	<div in:slide={{ delay: 200 }} class="mt-4 w-full space-y-2">
 		<div
 			class="grid w-full grid-cols-7 gap-1 border-b-2 pb-1 text-center max-[450px]:text-xs sm:text-lg"
 		>
-			<div>Pokemon</div>
+			<div>Guess</div>
 			<div>Gen.</div>
 			<div>Type1</div>
 			<div>Type2</div>
@@ -245,19 +261,27 @@
 			<div>Weight</div>
 			<div>Shape</div>
 		</div>
-		{#each guesses as guess (guess.pokemonId)}
-			<GuessEntry {guess} pokemon={getPokemonById(guess.pokemonId)} />
-		{/each}
-		{#if gameState === GameState.Playing}
-			<div class="text-center text-slate-700">
-				You have
-				<span class="font-bold underline">{Number(PUBLIC_MAX_GUESSES ?? 8) - guesses.length}</span>
-				{Number(PUBLIC_MAX_GUESSES ?? 8) - guesses.length > 1 ? 'guesses' : 'guess'} left.
+		{#each guesses as guess, i (guess.pokemonId)}
+			<div animate:flip={{ duration: 300, easing: quintOut }}>
+				<GuessEntry {guess} pokemon={getPokemonById(guess.pokemonId)} />
+				{#if i === guesses.length - 1 && gameState === GameState.Playing}
+					<div class="text-center text-slate-700">
+						You have
+						<span class="font-bold underline"
+							>{Number(PUBLIC_MAX_GUESSES ?? 8) - guesses.length}</span
+						>
+						{Number(PUBLIC_MAX_GUESSES ?? 8) - guesses.length > 1 ? 'guesses' : 'guess'} left.
+					</div>
+				{/if}
 			</div>
-		{/if}
+		{/each}
 	</div>
-{:else}
-	<div class="mt-5 flex w-full justify-center text-center">
+{:else if gameState !== GameState.Loading}
+	<div
+		class="mt-5 flex w-full justify-center text-center"
+		in:blur={{ delay: 200 }}
+		out:blur={{ duration: 200 }}
+	>
 		<div class="col-span-2 rounded border-2 border-slate-600 bg-white">
 			<div class="rounded-xs border-x-10 border-red-400">
 				<div class="border-2 border-red-300 px-5 py-2">
@@ -273,7 +297,48 @@
 {/if}
 
 {#if error}
-	<div class="absolute flex w-full justify-center">
-		<span class="rounded-md bg-red-600 px-4 py-1 text-white">Error: {error}</span>
+	<div class="absolute top-2 flex w-full justify-center" in:blur>
+		<div class="flex items-center rounded-md bg-red-600 py-1 pr-2 pl-4 text-white">
+			<div><b>Error:</b> {error}</div>
+			<button class="ml-2 hover:cursor-pointer" onclick={() => (error = '')}>
+				<X class="-mb-0.5 size-5" />
+			</button>
+		</div>
 	</div>
 {/if}
+
+<style>
+	#loading {
+		animation: pokeball-drop-bounce 700ms ease-out both;
+		transform-origin: center bottom;
+	}
+
+	@keyframes pokeball-drop-bounce {
+		0% {
+			transform: translateY(-160px) translateX(20px) scaleX(0.95) scaleY(1);
+			opacity: 0;
+		}
+
+		30% {
+			transform: translateY(0) scaleX(1.18) scaleY(0.95);
+			opacity: 1;
+		}
+
+		50% {
+			transform: translateY(-45px) scaleX(0.92) scaleY(1);
+		}
+
+		70% {
+			transform: translateY(0) scaleX(1.1) scaleY(0.9);
+		}
+
+		80% {
+			transform: translateY(-10px) scaleX(0.97) scaleY(1);
+		}
+
+		100% {
+			transform: translateY(0) scaleX(1) scaleY(1);
+			opacity: 1;
+		}
+	}
+</style>
