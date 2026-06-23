@@ -14,5 +14,5 @@
 </svelte:head>
 
 <img class="fixed right-0 bottom-0 -z-10 sm:w-2/3 lg:w-1/2 xl:w-1/3" src="/pokeball.svg" alt="" />
-<Menu />
+<Menu/>
 {@render children()}
