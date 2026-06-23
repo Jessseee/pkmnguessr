@@ -265,7 +265,7 @@
 			<div animate:flip={{ duration: 300, easing: quintOut }}>
 				<GuessEntry {guess} pokemon={getPokemonById(guess.pokemonId)} />
 				{#if i === guesses.length - 1 && gameState === GameState.Playing}
-					<div class="text-center text-slate-700">
+					<div class="text-center text-slate-700 mt-2">
 						You have
 						<span class="font-bold underline"
 							>{Number(PUBLIC_MAX_GUESSES ?? 8) - guesses.length}</span
