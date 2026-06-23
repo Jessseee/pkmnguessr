@@ -84,11 +84,11 @@
 			hints.height !== Hint.Correct && 'border-red-600 to-red-100'
 		]}
 	>
-		<span>{pokemon.height}m</span>
+		<span>{pokemon.height}</span>
 		{#if hints.height === Hint.Higher}
-			<ArrowUp />
+			<ArrowUp class="size-4 sm:size-6" />
 		{:else if hints.height === Hint.Lower}
-			<ArrowDown />
+			<ArrowDown class="size-4 sm:size-6" />
 		{/if}
 	</div>
 	<div
@@ -98,11 +98,11 @@
 			hints.weight !== Hint.Correct && 'border-red-600 to-red-100'
 		]}
 	>
-		<span>{pokemon.weight}kg</span>
+		<span>{pokemon.weight}</span>
 		{#if hints.weight === Hint.Higher}
-			<ArrowUp />
+			<ArrowUp class="size-4 sm:size-6" />
 		{:else if hints.weight === Hint.Lower}
-			<ArrowDown />
+			<ArrowDown class="size-4 sm:size-6" />
 		{/if}
 	</div>
 	<div
