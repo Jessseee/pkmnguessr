@@ -226,8 +226,7 @@ async function getPokemonById(varieties: Pokedex.Variety[]): Promise<Map<string,
 
 	const pokemon = await fetchBatched('Fetching Pokémon', ids, async (batch) => {
 		const result = (await pokemonApi.getPokemonByName(batch)) as
-			| Pokedex.Pokemon
-			| Pokedex.Pokemon[];
+			Pokedex.Pokemon | Pokedex.Pokemon[];
 
 		return toArray(result);
 	});
@@ -244,8 +243,7 @@ async function getGenerationByPokemonId(
 
 	const forms = await fetchBatched('Fetching forms', formIds, async (batch) => {
 		const result = (await pokemonApi.getPokemonFormByName(batch)) as
-			| Pokedex.PokemonForm
-			| Pokedex.PokemonForm[];
+			Pokedex.PokemonForm | Pokedex.PokemonForm[];
 
 		return toArray(result);
 	});
@@ -258,8 +256,7 @@ async function getGenerationByPokemonId(
 		versionGroupNames,
 		async (batch) => {
 			const result = (await pokemonApi.getVersionGroupByName(batch)) as
-				| Pokedex.VersionGroup
-				| Pokedex.VersionGroup[];
+				Pokedex.VersionGroup | Pokedex.VersionGroup[];
 
 			return toArray(result);
 		}
@@ -384,8 +381,7 @@ async function main(): Promise<void> {
 
 	const species = await fetchBatched('Fetching species', speciesList, async (batch) => {
 		const result = (await pokemonApi.getPokemonSpeciesByName(batch.map(({ name }) => name))) as
-			| Pokedex.PokemonSpecies
-			| Pokedex.PokemonSpecies[];
+			Pokedex.PokemonSpecies | Pokedex.PokemonSpecies[];
 
 		return toArray(result);
 	});

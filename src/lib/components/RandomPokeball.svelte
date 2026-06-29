@@ -37,9 +37,5 @@
 </script>
 
 {#if pokeball}
-	<img
-		{...props}
-		src={`/poke-ball/${pokeball}.png`}
-		alt={pokeball}
-	/>
+	<img {...props} src={`/poke-ball/${pokeball}.png`} alt={pokeball} />
 {/if}

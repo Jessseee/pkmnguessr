@@ -1,8 +1,9 @@
-export function hashString(value: string): number {
+export function hashString(value: string, salt = ''): number {
+	const _value = salt + value;
 	let hash = 2166136261;
 
-	for (let i = 0; i < value.length; i++) {
-		hash ^= value.charCodeAt(i);
+	for (let i = 0; i < _value.length; i++) {
+		hash ^= _value.charCodeAt(i);
 		hash = Math.imul(hash, 16777619);
 	}
 

@@ -161,7 +161,7 @@
 		class="fixed inset-0 z-50 flex items-center justify-center"
 		out:blur={{ delay: 300, duration: 300 }}
 	>
-		<img src={`/poke-ball/${page.data.pokeball}.png`} alt="Loading" id="loading" class="size-16"/>
+		<img src={`/poke-ball/${page.data.pokeball}.png`} alt="Loading" id="loading" class="size-16" />
 	</div>
 {:else if gameState !== GameState.Playing}
 	<div
@@ -262,7 +262,7 @@
 			<div animate:flip={{ duration: 300, easing: quintOut }}>
 				<GuessEntry {guess} pokemon={getPokemonById(guess.pokemonId)} />
 				{#if i === guesses.length - 1 && gameState === GameState.Playing}
-					<div class="text-center text-slate-700 mt-2">
+					<div class="mt-2 text-center text-slate-700">
 						You have
 						<span class="font-bold underline"
 							>{Number(PUBLIC_MAX_GUESSES ?? 8) - guesses.length}</span

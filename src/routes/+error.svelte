@@ -17,14 +17,14 @@
 	<title>PkmnGuessr - {page.status}</title>
 </svelte:head>
 
-<div
-	class="relative z-10 flex min-h-[calc(100svh-5rem)] items-center justify-center px-6 py-12"
->
+<div class="relative z-10 flex min-h-[calc(100svh-5rem)] items-center justify-center px-6 py-12">
 	<div
-		class="w-full max-w-xl rounded-2xl border-2 border-slate-200 drop-shadow-2xl p-8 text-center bg-white"
+		class="w-full max-w-xl rounded-2xl border-2 border-slate-200 bg-white p-8 text-center drop-shadow-2xl"
 		in:fly={{ y: 16, duration: 350 }}
 	>
-		<div class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-red-400/90 shadow-inner">
+		<div
+			class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-red-400/90 shadow-inner"
+		>
 			<img
 				src="/poke-ball/poke-ball.png"
 				alt="Poké Ball"
@@ -32,7 +32,7 @@
 			/>
 		</div>
 
-		<p class="mb-2 text-sm font-black uppercase tracking-[0.35em] text-red-500">
+		<p class="mb-2 text-sm font-black tracking-[0.35em] text-red-500 uppercase">
 			Error {page.status}
 		</p>
 
@@ -41,33 +41,33 @@
 		</h1>
 
 		{#if page.status !== 404}
-			<p class="mx-auto mb-8 max-w-sm text-base font-semibold leading-7 text-slate-600">
+			<p class="mx-auto mb-8 max-w-sm text-base leading-7 font-semibold text-slate-600">
 				{message}
 			</p>
 		{/if}
 
-		<div class="flex flex-col justify-center mt-8 gap-3 sm:flex-row">
+		<div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
 			{#if page.status === 404}
 				<button
 					type="button"
-					onclick={() => history.back() }
+					onclick={() => history.back()}
 					class={[
 						'flex min-w-0 items-center justify-center rounded-xl border-4 border-orange-500 bg-orange-100 px-2 py-1.5 font-bold text-orange-700 transition-colors sm:px-4',
 						'hover:cursor-pointer hover:border-red-600 hover:bg-red-100 hover:text-red-700'
 					]}
 				>
-					Go back <Undo2 class="ml-1 size-5"/>
+					Go back <Undo2 class="ml-1 size-5" />
 				</button>
 			{:else}
 				<button
 					type="button"
-					onclick={() => location.reload() }
+					onclick={() => location.reload()}
 					class={[
 						'flex min-w-0 items-center justify-center rounded-xl border-4 border-orange-500 bg-orange-100 px-2 py-1.5 font-bold text-orange-700 transition-colors sm:px-4',
 						'hover:cursor-pointer hover:border-red-600 hover:bg-red-100 hover:text-red-700'
 					]}
 				>
-					Try again <RefreshCw class="mt-0.5 ml-1 size-5"/>
+					Try again <RefreshCw class="mt-0.5 ml-1 size-5" />
 				</button>
 			{/if}
 		</div>

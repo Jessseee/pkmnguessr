@@ -1,6 +1,7 @@
 import type { Pokemon } from '$lib/types/Pokemon';
 import { hashString, seededRandom } from '$lib/utils/crypto';
 import { error } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -11,7 +12,7 @@ function getUtcDayNumber(date = new Date()): number {
 }
 
 function getRandomIndexForDay(total: number, dayNumber: number, attempt = 0): number {
-	const seed = hashString(`pokemon-day-${dayNumber}-attempt-${attempt}`);
+	const seed = hashString(`pokemon-day-${dayNumber}-attempt-${attempt}`, env.SALT);
 	const random = seededRandom(seed);
 
 	return Math.floor(random * total);
@@ -47,7 +48,13 @@ export function getDailyPokemon(pokemon: Pokemon[], date = new Date(), cooldownD
 }
 
 export function getRandomPokemon(pokemon: Pokemon[], seed: string) {
-	const random = seededRandom(hashString(seed));
+	const random = seededRandom(hashString(seed, env.SALT));
 	const index = Math.floor(random * pokemon.length);
 	return pokemon[index];
+}
+
+export async function getAllPokemon(platform?: App.Platform) {
+	const allPokemon = await platform?.env?.KV.get<Pokemon[]>('pokemon:all', 'json');
+	if (!allPokemon) throw error(500, 'Pokémon data not found.');
+	return allPokemon;
 }
