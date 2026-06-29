@@ -34,9 +34,9 @@
 	>
 		<span>Gen {pokemon.gen.id}</span>
 		{#if hints.gen === Hint.Higher}
-			<ArrowUp class="ml-0.5" />
+			<ArrowUp class="size-4 sm:size-6" />
 		{:else if hints.gen === Hint.Lower}
-			<ArrowDown class="ml-0.5" />
+			<ArrowDown class="size-4 sm:size-6" />
 		{/if}
 	</div>
 	<div
@@ -73,7 +73,7 @@
 			/>
 		{:else}
 			<span class="text-gray-400">
-				<CircleSlash2 class="size-9" />
+				<CircleSlash2 class="size-7 sm:size-9" />
 			</span>
 		{/if}
 	</div>
