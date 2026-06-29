@@ -2,9 +2,10 @@ import { getAllPokemon, getDailyPokemon } from '$lib/server/pokemon';
 import type { Pokemon } from '$lib/types/Pokemon';
 import { type ActionFailure, error, fail } from '@sveltejs/kit';
 import { type Guess } from '$lib/types/Guess';
-import { todayKey } from '$lib/utils/date';
+import { dateKey, yesterday } from '$lib/utils/date';
 import { formatHints } from '$lib/utils/hints';
 import { PUBLIC_MAX_GUESSES } from '$env/static/public';
+import { getSessionId } from '$lib/server/session';
 
 type GuessResult = Promise<ActionFailure<{ error: string }> | Guess>;
 
@@ -14,7 +15,7 @@ async function getSecretPokemon(platform?: App.Platform) {
 		'json'
 	);
 
-	if (daily?.date === todayKey()) {
+	if (daily?.date === dateKey()) {
 		return daily.pokemon;
 	}
 
@@ -25,7 +26,7 @@ async function getSecretPokemon(platform?: App.Platform) {
 		'pokemon:today',
 		JSON.stringify({
 			pokemon: pokemon,
-			date: todayKey()
+			date: dateKey()
 		})
 	);
 
@@ -33,19 +34,50 @@ async function getSecretPokemon(platform?: App.Platform) {
 }
 
 export const actions = {
-	guess: async ({ request, platform }): GuessResult => {
+	guess: async ({ request, platform, cookies }): GuessResult => {
 		const secretPokemon = await getSecretPokemon(platform);
+		const sessionId = getSessionId(cookies);
 
 		const data = await request.formData();
 		const n = Number(data.get('n'));
 		const guess = data.get('guess') as string;
 		const guessedPokemon = await JSON.parse(guess);
 
+		const madeCorrectGuess = guessedPokemon.name === secretPokemon.name;
+		const reachedMaxGuesses = n >= Number(PUBLIC_MAX_GUESSES ?? 8) - 1;
+		const finished = madeCorrectGuess || reachedMaxGuesses;
+
 		if (!guessedPokemon) return fail(404, { error: 'Guessed Pokémon does not exist.' });
 
+		if (finished) {
+			let streak = await platform?.env?.KV.get<{ last: string; n: number }>(
+				`session:${sessionId}:daily:streak`,
+				'json'
+			);
+
+			if (madeCorrectGuess) {
+				streak = {
+					last: dateKey(),
+					n: streak?.last === dateKey(yesterday()) ? streak.n + 1 : 1
+				};
+				platform?.env?.KV.put(`session:${sessionId}:daily:streak`, JSON.stringify(streak), {
+					expirationTtl: 86400 // 24 hours
+				});
+			} else {
+				platform?.env?.KV.delete(`session:${sessionId}:daily:streak`);
+			}
+
+			return {
+				correct: madeCorrectGuess,
+				answer: secretPokemon.id,
+				pokemonId: guessedPokemon.id,
+				hints: formatHints(guessedPokemon, secretPokemon),
+				streak: streak?.n
+			};
+		}
+
 		return {
-			correct: guessedPokemon.name === secretPokemon.name,
-			answer: n >= Number(PUBLIC_MAX_GUESSES ?? 8) - 1 ? secretPokemon.id : undefined,
+			correct: madeCorrectGuess,
 			pokemonId: guessedPokemon.id,
 			hints: formatHints(guessedPokemon, secretPokemon)
 		};

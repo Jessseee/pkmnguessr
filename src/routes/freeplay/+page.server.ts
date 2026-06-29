@@ -3,8 +3,8 @@ import { type ActionFailure, fail } from '@sveltejs/kit';
 import { type Guess } from '$lib/types/Guess';
 import { formatHints } from '$lib/utils/hints';
 import { getAllPokemon, getRandomPokemon } from '$lib/server/pokemon';
-import { randomBytes } from 'crypto';
 import { PUBLIC_MAX_GUESSES } from '$env/static/public';
+import { getSessionId } from '$lib/server/session';
 
 type GuessResult = Promise<ActionFailure<{ error: string }> | Guess>;
 
@@ -12,7 +12,7 @@ async function selectSecretPokemonForSession(sessionId: string, platform?: App.P
 	const allPokemon = await getAllPokemon(platform);
 	const selectedPokemon = getRandomPokemon(allPokemon, `${sessionId}-${new Date().toISOString()}`);
 	await platform?.env?.KV.put(`session:${sessionId}:freeplay`, JSON.stringify(selectedPokemon), {
-		expirationTtl: 86400
+		expirationTtl: 86400 // 24 hours
 	});
 	return selectedPokemon;
 }
@@ -25,11 +25,7 @@ async function getPokemonForSession(sessionId: string, platform?: App.Platform) 
 
 export const actions = {
 	guess: async ({ request, platform, cookies }): GuessResult => {
-		let sessionId = cookies.get('session');
-		if (!sessionId) {
-			sessionId = randomBytes(16).toString('hex');
-			cookies.set('session', sessionId, { path: '/' });
-		}
+		const sessionId = getSessionId(cookies);
 		const secretPokemon = await getPokemonForSession(sessionId, platform);
 
 		const data = await request.formData();

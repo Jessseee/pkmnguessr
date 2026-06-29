@@ -5,7 +5,7 @@
 	import type { Guess } from '$lib/types/Guess';
 	import { createShareText } from '$lib/utils/share';
 	import { page } from '$app/state';
-	import { todayKey } from '$lib/utils/date';
+	import { dateKey } from '$lib/utils/date';
 	import Countdown from '$lib/components/Countdown.svelte';
 	import { RefreshCw } from '@lucide/svelte';
 	import SocialPreview from '$lib/components/SocialPreview.svelte';
@@ -20,7 +20,7 @@
 
 	const shareText = $derived(
 		createShareText({
-			title: `PkmnGuessr Daily - ${todayKey()}`,
+			title: `PkmnGuessr Daily - ${dateKey()}`,
 			guesses,
 			pokemon: data.pokemon,
 			gameState,

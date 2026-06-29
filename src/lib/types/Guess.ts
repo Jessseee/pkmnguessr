@@ -18,4 +18,5 @@ export type Guess = {
 	correct: boolean;
 	pokemonId: string;
 	hints: Hints;
+	streak?: number;
 };

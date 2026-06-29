@@ -10,13 +10,13 @@
 	import type { Guess } from '$lib/types/Guess';
 	import { filter } from '$lib/utils/filter';
 	import InfoModal from '$lib/components/InfoModal.svelte';
-	import { todayKey } from '$lib/utils/date';
+	import { dateKey } from '$lib/utils/date';
 	import { GameState } from '$lib/types/GameState';
 	import { PUBLIC_MAX_GUESSES } from '$env/static/public';
 	import { flip } from 'svelte/animate';
 	import { quintOut } from 'svelte/easing';
 	import { blur, slide } from 'svelte/transition';
-	import { X } from '@lucide/svelte';
+	import { Flame, X } from '@lucide/svelte';
 	import { page } from '$app/state';
 
 	const UNOWN: Pokemon = {
@@ -122,7 +122,7 @@
 		try {
 			const stored = JSON.parse(raw) as StoredGuesses;
 
-			if (stored.date === todayKey()) {
+			if (stored.date === dateKey()) {
 				guesses = stored.guesses;
 			} else {
 				localStorage.removeItem(storageKey);
@@ -139,7 +139,7 @@
 		localStorage.setItem(
 			storageKey,
 			JSON.stringify({
-				date: todayKey(),
+				date: dateKey(),
 				guesses
 			} satisfies StoredGuesses)
 		);
@@ -164,6 +164,7 @@
 		<img src={`/poke-ball/${page.data.pokeball}.png`} alt="Loading" id="loading" class="size-16" />
 	</div>
 {:else if gameState !== GameState.Playing}
+	{@const finalGuess = guesses[0]}
 	<div
 		in:blur={{ delay: 200 }}
 		class={[
@@ -173,7 +174,7 @@
 		]}
 	>
 		{#if gameState === GameState.Won}
-			{@const pokemon = getPokemonById(guesses[0].pokemonId)}
+			{@const pokemon = getPokemonById(finalGuess.pokemonId)}
 			<h1 class="text-2xl font-bold">That's right!</h1>
 			<h3>The Pokémon is <u>{pokemon.name}</u></h3>
 			<SearchEntry
@@ -181,8 +182,15 @@
 				{pokemon}
 				showFlavorText={true}
 			/>
+			{#if (finalGuess.streak ?? 0) > 1}
+				<div class="mt-3 mb-1 flex items-center text-xl">
+					<Flame class="mr-1 size-6 text-red-600" />
+					<span class="mr-1.5 font-bold underline">{finalGuess.streak}</span>
+					Day Streak
+				</div>
+			{/if}
 		{:else if gameState === GameState.Lost}
-			{@const pokemon = getPokemonById(guesses[0].answer)}
+			{@const pokemon = getPokemonById(finalGuess.answer)}
 			<h1 class="text-2xl font-bold">Better luck next time!</h1>
 			<h3>The Pokémon was <u>{pokemon.name}</u></h3>
 			<SearchEntry
