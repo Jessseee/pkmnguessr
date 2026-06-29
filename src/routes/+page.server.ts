@@ -1,4 +1,4 @@
-import { getDailyPokemon } from '$lib/server/randomPokemon';
+import { getDailyPokemon } from '$lib/server/pokemon';
 import type { Pokemon } from '$lib/types/Pokemon';
 import { type ActionFailure, error, fail } from '@sveltejs/kit';
 import { type Guess } from '$lib/types/Guess';

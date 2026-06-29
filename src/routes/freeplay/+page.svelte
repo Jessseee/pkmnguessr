@@ -68,7 +68,7 @@
 
 	{#key gameKey}
 		<div out:blur>
-			<Guessr pokemon={data.pokemon} {storageKey} bind:gameState bind:guesses />
+			<Guessr {storageKey} bind:gameState bind:guesses />
 		</div>
 	{/key}
 </div>

@@ -17,7 +17,7 @@
 	import { quintOut } from 'svelte/easing';
 	import { blur, slide } from 'svelte/transition';
 	import { X } from '@lucide/svelte';
-	import { getRandomPokeball } from '$lib/utils/pokeball';
+	import { page } from '$app/state';
 
 	const UNOWN: Pokemon = {
 		id: '0',
@@ -50,21 +50,18 @@
 	let blurTimer: ReturnType<typeof setTimeout>;
 
 	type Props = {
-		pokemon: Pokemon[];
 		storageKey?: string;
 		gameState?: GameState;
 		guesses?: Guess[];
 	};
 
 	let {
-		pokemon: allPokemon,
 		storageKey = 'guesses',
 		gameState = $bindable(GameState.Playing),
 		guesses = $bindable([])
 	}: Props = $props();
 
 	let guessesLoaded = $state(false);
-	const pokeball = getRandomPokeball();
 
 	let error = $state('');
 
@@ -74,12 +71,12 @@
 
 	function getPokemonById(id: string | undefined): Pokemon {
 		if (!id) return UNOWN;
-		const pokemon = allPokemon.find((_pokemon) => _pokemon.id === id);
+		const pokemon = page.data.pokemon.find((_pokemon) => _pokemon.id === id);
 		return pokemon ?? UNOWN;
 	}
 
 	let canSubmit = $derived(
-		searchResults.length === 1 || allPokemon.some((pokemon) => pokemon.name === value)
+		searchResults.length === 1 || page.data.pokemon.some((pokemon) => pokemon.name === value)
 	);
 
 	const submit: SubmitFunction = ({ formData, cancel }) => {
@@ -164,7 +161,7 @@
 		class="fixed inset-0 z-50 flex items-center justify-center"
 		out:blur={{ delay: 300, duration: 300 }}
 	>
-		<img src="/poke-ball/{pokeball}.png" alt="Loading" id="loading" class="block size-16" />
+		<img src={`/poke-ball/${page.data.pokeball}.png`} alt="Loading" id="loading" class="size-16"/>
 	</div>
 {:else if gameState !== GameState.Playing}
 	<div
@@ -202,7 +199,7 @@
 			<SearchField
 				bind:value
 				bind:searchResults
-				data={allPokemon}
+				data={page.data.pokemon}
 				filter={filter(guesses)}
 				callback={() => (error = '')}
 				onfocus={() => {

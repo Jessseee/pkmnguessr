@@ -1,5 +1,6 @@
 import type { Pokemon } from '$lib/types/Pokemon';
 import { hashString, seededRandom } from '$lib/utils/crypto';
+import { error } from '@sveltejs/kit';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

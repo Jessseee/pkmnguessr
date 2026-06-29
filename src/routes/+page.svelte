@@ -58,6 +58,6 @@
 	{/if}
 
 	{#key gameKey}
-		<Guessr pokemon={data.pokemon} {storageKey} bind:gameState bind:guesses />
+		<Guessr {storageKey} bind:gameState bind:guesses />
 	{/key}
 </div>
