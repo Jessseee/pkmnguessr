@@ -147,11 +147,11 @@
 
 	$effect(() => {
 		gameState = guessesLoaded
-			? guesses.length > 7
+			? guesses.at(0)?.correct
+				? GameState.Won
+			: guesses.length > 7
 				? GameState.Lost
-				: guesses.at(0)?.correct
-					? GameState.Won
-					: GameState.Playing
+				: GameState.Playing
 			: GameState.Loading;
 	});
 </script>
