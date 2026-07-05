@@ -60,11 +60,11 @@ export const actions = {
 					last: dateKey(),
 					n: streak?.last === dateKey(yesterday()) ? streak.n + 1 : 1
 				};
-				platform?.env?.KV.put(`session:${sessionId}:daily:streak`, JSON.stringify(streak), {
-					expirationTtl: 86400 // 24 hours
+				await platform?.env?.KV.put(`session:${sessionId}:daily:streak`, JSON.stringify(streak), {
+					expirationTtl: 172800 // 48 hours
 				});
 			} else {
-				platform?.env?.KV.delete(`session:${sessionId}:daily:streak`);
+				await platform?.env?.KV.delete(`session:${sessionId}:daily:streak`);
 			}
 
 			return {

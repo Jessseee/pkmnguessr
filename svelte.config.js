@@ -9,6 +9,10 @@ const config = {
 	},
 	kit: {
 		adapter: adapter(),
+		csp: {
+			mode: "auto",
+			directives: { "script-src": ["self"] },
+		},
 		csrf: {
 			trustedOrigins: process.env.TRUSTED_ORIGINS ?? []
 		}
