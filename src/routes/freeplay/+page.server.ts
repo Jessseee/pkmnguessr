@@ -4,7 +4,7 @@ import { type Guess } from '$lib/types/Guess';
 import { formatHints } from '$lib/utils/hints';
 import { getAllPokemon, getRandomPokemon } from '$lib/server/pokemon';
 import { PUBLIC_MAX_GUESSES } from '$env/static/public';
-import { getSessionId } from '$lib/server/session';
+import { getOrSetSessionId } from '$lib/server/session';
 
 type GuessResult = Promise<ActionFailure<{ error: string }> | Guess>;
 
@@ -17,7 +17,7 @@ async function selectSecretPokemonForSession(sessionId: string, platform?: App.P
 	return selectedPokemon;
 }
 
-async function getPokemonForSession(sessionId: string, platform?: App.Platform) {
+async function getOrSetNewPokemonForSession(sessionId: string, platform?: App.Platform) {
 	const pokemon = await platform?.env?.KV.get<Pokemon>(`session:${sessionId}:freeplay`, 'json');
 	if (!pokemon) return selectSecretPokemonForSession(sessionId, platform);
 	return pokemon;
@@ -25,8 +25,8 @@ async function getPokemonForSession(sessionId: string, platform?: App.Platform) 
 
 export const actions = {
 	guess: async ({ request, platform, cookies }): GuessResult => {
-		const sessionId = getSessionId(cookies);
-		const secretPokemon = await getPokemonForSession(sessionId, platform);
+		const sessionId = getOrSetSessionId(cookies);
+		const secretPokemon = await getOrSetNewPokemonForSession(sessionId, platform);
 
 		const data = await request.formData();
 		const n = Number(data.get('n'));

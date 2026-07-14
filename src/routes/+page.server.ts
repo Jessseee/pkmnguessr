@@ -5,11 +5,11 @@ import { type Guess } from '$lib/types/Guess';
 import { dateKey, yesterday } from '$lib/utils/date';
 import { formatHints } from '$lib/utils/hints';
 import { PUBLIC_MAX_GUESSES } from '$env/static/public';
-import { getSessionId } from '$lib/server/session';
+import { getOrSetSessionId } from '$lib/server/session';
 
 type GuessResult = Promise<ActionFailure<{ error: string }> | Guess>;
 
-async function getSecretPokemon(platform?: App.Platform) {
+async function getOrSelectNewSecretPokemon(platform?: App.Platform) {
 	const daily = await platform?.env?.KV.get<{ pokemon: Pokemon; date: string }>(
 		'pokemon:today',
 		'json'
@@ -35,8 +35,8 @@ async function getSecretPokemon(platform?: App.Platform) {
 
 export const actions = {
 	guess: async ({ request, platform, cookies }): GuessResult => {
-		const secretPokemon = await getSecretPokemon(platform);
-		const sessionId = getSessionId(cookies);
+		const secretPokemon = await getOrSelectNewSecretPokemon(platform);
+		const sessionId = getOrSetSessionId(cookies);
 
 		const data = await request.formData();
 		const n = Number(data.get('n'));
